@@ -1,0 +1,51 @@
+###############################################################################
+#                          Generated on phpdocker.io                          #
+###############################################################################
+version: "3.1"
+
+networks:
+    financas-workspace:
+        driver: bridge
+
+services:
+    mysql:
+        image: mysql:5.7
+        restart: always
+        container_name: financas-mysql
+        working_dir: /application
+        volumes:
+            - .:/application
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=financas
+            - MYSQL_USER=root
+            - MYSQL_PASSWORD=1234
+        ports:
+            - "3306:3306"
+        networks:
+            - financas-workspace
+
+    webserver:
+        image: nginx:alpine
+        container_name: financas-webserver
+        working_dir: /application
+        volumes:
+            - .:/application
+            - ./phpdocker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+        ports:
+            - "80:80"
+        links:
+            - mysql:financas-mysql
+        networks:
+            - financas-workspace
+
+    php-fpm:
+        build: phpdocker/php-fpm
+        restart: always
+        container_name: financas-php-fpm
+        working_dir: /application
+        volumes:
+            - .:/application
+            - ./phpdocker/php-fpm/php-ini-overrides.ini:/etc/php/7.2/fpm/conf.d/99-overrides.ini
+        networks:
+            - financas-workspace
